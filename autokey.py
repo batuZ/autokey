@@ -26,10 +26,17 @@ state_listener = lambda s: None
 
 
 # ---------------- <editor-fold desc="interface"> ----------------
+def add_actions(actions):
+    for a in actions:
+        recode_list.append(a)
+
+
 def open_file(path):
     with open(path, 'r', encoding='utf-8') as file:
-        nonlocal recode_list
-        recode_list = json.loads(file.readlines(file))
+        recode_list.clear()
+        data = json.loads(file.readlines(file))
+        for a in data:
+            recode_list.append(a)
         output_info_listener('动作导入成功')
 
 
@@ -53,11 +60,11 @@ def stop():
 
 def start_observer():
     # 启动键盘监听，热键+记录输入
-    keyboard.Listener(on_press=lambda key: __global_keyboard_listener(__format_key(key), 'press'),
-                      on_release=lambda key: __global_keyboard_listener(__format_key(key), 'release')).start()
-    mouse.Listener(on_move=lambda x, y: None,
-                   on_click=lambda x, y, button, pressed: None,
-                   on_scroll=lambda x, y, x_axis, y_axis: None).start()
+    keyboard.Listener(on_press=lambda key: __global_keyboard_listener(__format_key(key, 'press')),
+                      on_release=lambda key: __global_keyboard_listener(__format_key(key, 'release'))).start()
+    # mouse.Listener(on_move=lambda x, y: None,
+    #                on_click=lambda x, y, button, pressed: None,
+    #                on_scroll=lambda x, y, x_axis, y_axis: None).start()
 
 
 # --- </editor-fold> ---
@@ -88,7 +95,7 @@ _crl = keyboard.Controller()
 
 
 # ---------------- <editor-fold desc="private methods"> ----------------
-def __format_key(key):
+def __format_key(key, action):
     """
     键对象格式化成字典
     :param key: 键对象
@@ -96,11 +103,13 @@ def __format_key(key):
     """
     if isinstance(key, keyboard.Key):  # 控制键
         key = {
+            'event': action,
             "name": key.name,
             "vk": key.value.vk
         }
     elif isinstance(key, keyboard._darwin.KeyCode):  # 字符建
         key = {
+            'event': action,
             "name": str(key),
             "vk": key.vk
         }
@@ -109,8 +118,18 @@ def __format_key(key):
     return key
 
 
-def __global_keyboard_listener(key, action):
-    pass
+def __global_keyboard_listener(key):
+    # 输出按键信息
+    if key['event'] == 'press':
+        _output_info_list.append(key)
+        tt = ''
+        for k in _output_info_list:
+            tt += '+' + k['name'] + '(vk:%s)' % k['vk']
+        output_info_listener(tt[1::])
+    else:
+        _output_info_list.clear()
+    # 调用callbacks
+    action_listener(key)
 
 
 def __global_mouse_listener(key, action):

@@ -1,7 +1,50 @@
 import tkinter
 from tkinter import ttk, filedialog, messagebox
 import autokey
-autokey.action_listener=lambda info: print(info)
+
+insert_key_list = []
+insert_key_count = 0
+
+
+def action_listener(key):
+    global insert_key_count
+    after = insert_key_list[-1] if insert_key_list else None
+    if key['event'] == 'press' and key != after:
+        if insert_key_count == 0:
+            insert_key_list.clear()
+        insert_key_count += 1
+        insert_key_list.append(key)
+        key_to_str(insert_key_list)
+
+    elif key['event'] == 'release':
+        insert_key_count -= 1
+        insert_key_list.append(key)
+        key_to_str(insert_key_list)
+
+
+def key_to_str(keys):
+    res = fx = ''
+    for key in keys:
+        if key['event'] == 'press' or key['event'] == 'm_down':
+            fx = '↓'
+        elif key['event'] == 'release' or key['event'] == 'm_up':
+            fx = '↑'
+        res += "%s%s + " % (key['name'], fx)
+    insert_key_var.set(res[:-2])
+
+
+def insert_key_btn():
+    autokey.add_actions(insert_key_list)
+    [tv.delete(item) for item in tv.get_children()]
+    for key in autokey.recode_list:
+        tv.insert('', 'end', values=(key["event"], key['vk'], key['name']))
+    insert_key_list.clear()
+    insert_key_var.set('')
+
+def show_info(message):
+    info_label["text"] = message
+
+
 if __name__ == '__main__':
     root = tkinter.Tk()
     root.title('Auto Key')
@@ -27,8 +70,6 @@ if __name__ == '__main__':
     input_loop_num = ttk.Entry(frame_loop_num, textvariable=loop_num_var, state='disabled')
     input_loop_num.grid(row=0, column=1, sticky=tkinter.W + tkinter.E)
 
-    # btn_loop_num = ttk.Button(frame_loop_num, text='应用', command=lambda: loop_num_var.set(33))
-    # btn_loop_num.grid(row=0, column=2)
     frame_loop_num.columnconfigure(1, weight=1)
     # </editor-fold>
 
@@ -46,17 +87,15 @@ if __name__ == '__main__':
     frame_recode = tkinter.Frame(root)
     frame_recode.pack(padx=6, pady=6)
 
-    ttk.Button(frame_recode, text='插入按键').grid(row=0, column=0)
+    ttk.Button(frame_recode, text='插入按键', command=insert_key_btn).grid(row=0, column=0)
     insert_key_var = tkinter.StringVar()
-    insert_key_entry = ttk.Entry(frame_recode, textvariable=insert_key_var)
-    insert_key_entry.grid(row=0, column=1)
-    insert_key_entry.bind('<FocusIn>', lambda s: print(1))
-    insert_key_entry.bind('<FocusOut>', lambda s: print(2))
+    insert_key_label = ttk.Label(frame_recode, textvariable=insert_key_var)
+    insert_key_label.grid(row=0, column=1, sticky=tkinter.W)
 
     ttk.Button(frame_recode, text='插入时间').grid(row=1, column=0)
     insert_time_var = tkinter.DoubleVar()
     insert_time_entry = ttk.Entry(frame_recode, textvariable=insert_time_var)
-    insert_time_entry.grid(row=1, column=1, sticky=tkinter.E)
+    insert_time_entry.grid(row=1, column=1, sticky=tkinter.E+tkinter.W)
     insert_time_label = tkinter.Label(frame_recode, text='秒').grid(row=1, column=2, padx=5)
     # --- </editor-fold> ---
 
@@ -72,5 +111,8 @@ if __name__ == '__main__':
     # 信息栏
     info_label = ttk.Label(root, text='')
     info_label.pack(fill=tkinter.X, side=tkinter.BOTTOM)
+    autokey.output_info_listener = show_info  # 输出信息回调
+    autokey.action_listener = action_listener
+    autokey.start_observer()
 
     root.mainloop()
