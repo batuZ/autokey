@@ -5,7 +5,6 @@ import time
 import json
 
 # ---------------- <editor-fold desc="settings"> ----------------
-action_path = 'actions.action'
 ''' 动作文件路径，用于打开或保存文件 '''
 loop_count = 1
 ''' 循环次数，负数为无限循环 '''
@@ -18,35 +17,47 @@ pause_play_key = [47]  # .
 stop_play_key = [44]  # /
 ''' 终止热键 '''
 
+output_info_listener = lambda s: None
+action_listener = lambda key: None
+state_listener = lambda s: None
+
 
 # --- </editor-fold> ---
 
 
 # ---------------- <editor-fold desc="interface"> ----------------
-def open_file():
-    pass
+def open_file(path):
+    with open(path, 'r', encoding='utf-8') as file:
+        nonlocal recode_list
+        recode_list = json.loads(file.readlines(file))
+        output_info_listener('动作导入成功')
 
 
-def save_file():
-    path = filedialog.asksaveasfilename()
-    print(recode_list)
-    if path:
-        with open(path, 'w', encoding='utf-8') as file:
-            file.write(json.dumps(recode_list))
-    else:
-        print('cancel save')
+def save_file(path):
+    with open(path, 'w', encoding='utf-8') as file:
+        file.write(json.dumps(recode_list))
+        output_info_listener('保持成功')
 
 
-def play():
-    pass
+def play(need_wait=False):
+    output_info_listener('开始播放动作')
 
 
 def pause():
-    pass
+    output_info_listener('播放动作已暂停')
 
 
 def stop():
-    pass
+    output_info_listener('播放动作已终止')
+
+
+def start_observer():
+    # 启动键盘监听，热键+记录输入
+    keyboard.Listener(on_press=lambda key: __global_keyboard_listener(__format_key(key), 'press'),
+                      on_release=lambda key: __global_keyboard_listener(__format_key(key), 'release')).start()
+    mouse.Listener(on_move=lambda x, y: None,
+                   on_click=lambda x, y, button, pressed: None,
+                   on_scroll=lambda x, y, x_axis, y_axis: None).start()
 
 
 # --- </editor-fold> ---
@@ -55,22 +66,87 @@ def stop():
 # ---------------- <editor-fold desc="private var"> ----------------
 _play_thread = None
 '''播放线程'''
-pause_flag = False
+_pause_flag = False
 ''' 在play循环时判断是否要挂起play子线程 '''
-stop_flag = False
+_stop_flag = False
 ''' 在play循环时判断是否要终止play子线程 '''
-is_recoding = False
+_is_recoding = False
 ''' 判断是否在录制状态，只有Ture时才会写记录 '''
-is_playing = False
+_is_playing = False
 ''' 判断是否在play，避免重复play '''
-hot_key_tmp_list = []
+_hot_key_tmp_list = []
 ''' 按下热键时将临时放在这里，当有press发生时会与设置的热键或热键组合一一比对 '''
-output_info_list = []
+_output_info_list = []
 ''' 用于输出提示的按键记录 '''
-crl = keyboard.Controller()
+_global_interval = 0.01
+''' 公共CD, 每一条记录执行后执行sleep的时长'''
+_crl = keyboard.Controller()
 ''' 按键控制器 '''
+
+
 # --- </editor-fold> ---
 
+
+# ---------------- <editor-fold desc="private methods"> ----------------
+def __format_key(key):
+    """
+    键对象格式化成字典
+    :param key: 键对象
+    :return: 键字典
+    """
+    if isinstance(key, keyboard.Key):  # 控制键
+        key = {
+            "name": key.name,
+            "vk": key.value.vk
+        }
+    elif isinstance(key, keyboard._darwin.KeyCode):  # 字符建
+        key = {
+            "name": str(key),
+            "vk": key.vk
+        }
+    else:
+        pass
+    return key
+
+
+def __global_keyboard_listener(key, action):
+    pass
+
+
+def __global_mouse_listener(key, action):
+    pass
+
+
+# --- </editor-fold> ---
+
+# --------------<editor-fold desc="main: 以脚本方式运行">--------------
+if __name__ == '__main__':
+    open_file('actions.action')
+    loop_count = 10
+    output_info_listener = lambda s: print(s)
+    state_listener = lambda s: sys.exit(0) if s == 'stopped' else print(s)
+    play(need_wait=True)
+    print('完成并退出脚本')
+# </editor-fold>
+
+# --------------<editor-fold desc="动作文件示例及键位对照表">--------------
+
+'''
+{
+    loop_count: 4,          # 循环次数，负数为无限循环
+    start_play_key: [44],   # 设置热键
+    actions:[
+        {action: press, vk:5, name: 'g'},           # g键按下
+        {action: release, vk:5, name: 'g'},         # g键抬起
+        {action: wait, vk:2。5, name: second},       # 等待2.5秒
+        {action: move, vk:-1, name: 'none', location: {x: 33, y:56}}, # 鼠标移动到屏幕坐标（33，56）位置
+        {action: m_down, vk:312, name: 'm_left'},   # 鼠标左键按下
+        {action: m_up, vk:312, name: 'm_left'},     # 鼠标左键抬起
+        {action: m_scroll, vk:311, name: 'm_middle', location: {x: 0, y:-2}}, # 鼠标中键滚动
+    ]
+}
+
+'''
 
 ''' vk  name
     0   a
@@ -171,3 +247,4 @@ crl = keyboard.Controller()
     126 up
 
 '''
+# </editor-fold>

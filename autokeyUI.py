@@ -1,7 +1,7 @@
 import tkinter
 from tkinter import ttk, filedialog, messagebox
 import autokey
-
+autokey.action_listener=lambda info: print(info)
 if __name__ == '__main__':
     root = tkinter.Tk()
     root.title('Auto Key')
