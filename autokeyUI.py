@@ -1,6 +1,7 @@
 import tkinter
 from tkinter import ttk, filedialog, messagebox
 import autokey
+import sys
 
 insert_key_list = []
 insert_key_count = 0
@@ -36,13 +37,32 @@ def key_to_str(keys):
 def insert_key_btn():
     autokey.add_actions(insert_key_list)
     [tv.delete(item) for item in tv.get_children()]
-    for key in autokey.recode_list:
-        tv.insert('', 'end', values=(key["event"], key['vk'], key['name']))
+    [tv.insert('', 'end', values=(key["event"], key['vk'], key['name'])) for key in autokey.recode_list]
+
+
+def clear_insert_list():
     insert_key_list.clear()
     insert_key_var.set('')
 
+
+def insert_time_btn():
+    if insert_time_var.get() > 0:
+        autokey.add_actions([{'event': 'wait', 'vk': insert_time_var.get(), 'name': 'second'}])
+        [tv.delete(item) for item in tv.get_children()]
+        [tv.insert('', 'end', values=(key["event"], key['vk'], key['name'])) for key in autokey.recode_list]
+
+
 def show_info(message):
     info_label["text"] = message
+
+
+def open_file():
+    path = filedialog.askopenfilename(filetypes=[('json', 'json')])
+    if path:
+        autokey.open_file(path)
+        [tv.delete(item) for item in tv.get_children()]
+        [tv.insert('', 'end', values=(key["event"], key['vk'], key['name'])) for key in autokey.recode_list]
+        loop_num_var.set(autokey.loop_count)
 
 
 if __name__ == '__main__':
@@ -55,21 +75,19 @@ if __name__ == '__main__':
     root.config(menu=menuBar)
     fileMenu = tkinter.Menu(menuBar)
     menuBar.add_cascade(label="File", menu=fileMenu)
-    fileMenu.add_command(label="Open", command=lambda: print(filedialog.askopenfilename()))
-    fileMenu.add_command(label="Save", command=None)
-    fileMenu.add_command(label="Exit", command=None)
+    fileMenu.add_command(label="Open", command=open_file)
+    fileMenu.add_command(label="Save", command=lambda: autokey.save_file(filedialog.asksaveasfilename()))
+    fileMenu.add_command(label="Exit", command=lambda: sys.exit(0))
     # --- </editor-fold> ---
 
     # ----------------- <editor-fold desc="循环控制" defaultsect="collapsed"> ---------
     frame_loop_num = ttk.Frame(root)
     frame_loop_num.pack(fill=tkinter.X, padx=5, pady=5)
-
     tkinter.Label(frame_loop_num, text='循环次数(负数为无限循环):').grid()
-
     loop_num_var = tkinter.IntVar(value=1)
-    input_loop_num = ttk.Entry(frame_loop_num, textvariable=loop_num_var, state='disabled')
+    loop_num_var.trace("w", lambda *s: autokey.set_loop_count(loop_num_var.get()))
+    input_loop_num = ttk.Entry(frame_loop_num, textvariable=loop_num_var)
     input_loop_num.grid(row=0, column=1, sticky=tkinter.W + tkinter.E)
-
     frame_loop_num.columnconfigure(1, weight=1)
     # </editor-fold>
 
@@ -91,11 +109,12 @@ if __name__ == '__main__':
     insert_key_var = tkinter.StringVar()
     insert_key_label = ttk.Label(frame_recode, textvariable=insert_key_var)
     insert_key_label.grid(row=0, column=1, sticky=tkinter.W)
+    ttk.Button(frame_recode, text='清空', command=clear_insert_list).grid(row=0, column=2)
 
-    ttk.Button(frame_recode, text='插入时间').grid(row=1, column=0)
+    ttk.Button(frame_recode, text='插入时间', command=insert_time_btn).grid(row=1, column=0)
     insert_time_var = tkinter.DoubleVar()
     insert_time_entry = ttk.Entry(frame_recode, textvariable=insert_time_var)
-    insert_time_entry.grid(row=1, column=1, sticky=tkinter.E+tkinter.W)
+    insert_time_entry.grid(row=1, column=1, sticky=tkinter.E + tkinter.W)
     insert_time_label = tkinter.Label(frame_recode, text='秒').grid(row=1, column=2, padx=5)
     # --- </editor-fold> ---
 

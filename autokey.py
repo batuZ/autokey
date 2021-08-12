@@ -21,52 +21,6 @@ output_info_listener = lambda s: None
 action_listener = lambda key: None
 state_listener = lambda s: None
 
-
-# --- </editor-fold> ---
-
-
-# ---------------- <editor-fold desc="interface"> ----------------
-def add_actions(actions):
-    for a in actions:
-        recode_list.append(a)
-
-
-def open_file(path):
-    with open(path, 'r', encoding='utf-8') as file:
-        recode_list.clear()
-        data = json.loads(file.readlines(file))
-        for a in data:
-            recode_list.append(a)
-        output_info_listener('动作导入成功')
-
-
-def save_file(path):
-    with open(path, 'w', encoding='utf-8') as file:
-        file.write(json.dumps(recode_list))
-        output_info_listener('保持成功')
-
-
-def play(need_wait=False):
-    output_info_listener('开始播放动作')
-
-
-def pause():
-    output_info_listener('播放动作已暂停')
-
-
-def stop():
-    output_info_listener('播放动作已终止')
-
-
-def start_observer():
-    # 启动键盘监听，热键+记录输入
-    keyboard.Listener(on_press=lambda key: __global_keyboard_listener(__format_key(key, 'press')),
-                      on_release=lambda key: __global_keyboard_listener(__format_key(key, 'release'))).start()
-    # mouse.Listener(on_move=lambda x, y: None,
-    #                on_click=lambda x, y, button, pressed: None,
-    #                on_scroll=lambda x, y, x_axis, y_axis: None).start()
-
-
 # --- </editor-fold> ---
 
 
@@ -89,6 +43,75 @@ _global_interval = 0.01
 ''' 公共CD, 每一条记录执行后执行sleep的时长'''
 _crl = keyboard.Controller()
 ''' 按键控制器 '''
+
+
+# --- </editor-fold> ---
+
+
+# ---------------- <editor-fold desc="interface"> ----------------
+def add_actions(actions):
+    for a in actions:
+        recode_list.append(a)
+
+
+def open_file(path):
+    with open(path, 'r', encoding='utf-8') as file:
+        global loop_count, start_play_key, pause_play_key, stop_play_key
+        data = json.load(file)
+        loop_count = int(data['loop_count'])
+        start_play_key = data['start_play_key']
+        pause_play_key = data['pause_play_key']
+        stop_play_key = data['stop_play_key']
+        recode_list.clear()
+        for a in data['actions']:
+            recode_list.append(a)
+        output_info_listener('动作导入成功')
+
+
+def save_file(path):
+    if path:
+        with open(path+'.json', 'w', encoding='utf-8') as file:
+            res = {
+                'loop_count': loop_count,
+                'start_play_key': start_play_key,
+                'pause_play_key': pause_play_key,
+                'stop_play_key': stop_play_key,
+                'actions': recode_list
+            }
+            file.write(json.dumps(res))
+            output_info_listener('保存成功')
+
+
+def set_loop_count(count: int):
+    try:
+        tmp = int(count)
+        if not tmp == 0:
+            global loop_count
+            loop_count = tmp
+            output_info_listener('设置成功')
+    except ValueError:
+        output_info_listener('设置失败')
+
+
+def play(need_wait=False):
+    output_info_listener('开始播放动作')
+
+
+def pause():
+    output_info_listener('播放动作已暂停')
+
+
+def stop():
+    output_info_listener('播放动作已终止')
+
+
+def start_observer():
+    # 启动键盘监听，热键+记录输入
+    keyboard.Listener(on_press=lambda key: __global_keyboard_listener(__format_key(key, 'press')),
+                      on_release=lambda key: __global_keyboard_listener(__format_key(key, 'release'))).start()
+    # mouse.Listener(on_move=lambda x, y: None,
+    #                on_click=lambda x, y, button, pressed: None,
+    #                on_scroll=lambda x, y, x_axis, y_axis: None).start()
 
 
 # --- </editor-fold> ---
@@ -157,7 +180,7 @@ if __name__ == '__main__':
     actions:[
         {action: press, vk:5, name: 'g'},           # g键按下
         {action: release, vk:5, name: 'g'},         # g键抬起
-        {action: wait, vk:2。5, name: second},       # 等待2.5秒
+        {action: wait, vk:2.5, name: second},       # 等待2.5秒
         {action: move, vk:-1, name: 'none', location: {x: 33, y:56}}, # 鼠标移动到屏幕坐标（33，56）位置
         {action: m_down, vk:312, name: 'm_left'},   # 鼠标左键按下
         {action: m_up, vk:312, name: 'm_left'},     # 鼠标左键抬起
