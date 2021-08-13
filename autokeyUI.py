@@ -8,19 +8,20 @@ insert_key_count = 0
 
 
 def action_listener(key):
-    global insert_key_count
-    after = insert_key_list[-1] if insert_key_list else None
-    if key['event'] == 'press' and key != after:
-        if insert_key_count == 0:
-            insert_key_list.clear()
-        insert_key_count += 1
-        insert_key_list.append(key)
-        key_to_str(insert_key_list)
+    if insert_key_focus_var.get():
+        global insert_key_count
+        after = insert_key_list[-1] if insert_key_list else None
+        if key['event'] == 'press' and key != after:
+            if insert_key_count == 0:
+                insert_key_list.clear()
+            insert_key_count += 1
+            insert_key_list.append(key)
+            key_to_str(insert_key_list)
 
-    elif key['event'] == 'release':
-        insert_key_count -= 1
-        insert_key_list.append(key)
-        key_to_str(insert_key_list)
+        elif key['event'] == 'release':
+            insert_key_count -= 1
+            insert_key_list.append(key)
+            key_to_str(insert_key_list)
 
 
 def key_to_str(keys):
@@ -38,7 +39,7 @@ def insert_key_btn():
     autokey.add_actions(insert_key_list)
     [tv.delete(item) for item in tv.get_children()]
     [tv.insert('', 'end', values=(key["event"], key['vk'], key['name'])) for key in autokey.recode_list]
-
+    clear_insert_list()
 
 def clear_insert_list():
     insert_key_list.clear()
@@ -70,6 +71,8 @@ if __name__ == '__main__':
     root.title('Auto Key')
     root.resizable(0, 0)  # 固定尺寸
     root.geometry('+5+80')
+    root.bind('<f>', lambda event:print(123))
+
     # ---------------- <editor-fold desc="菜单栏"> ----------------
     menuBar = tkinter.Menu(root)
     root.config(menu=menuBar)
@@ -107,8 +110,15 @@ if __name__ == '__main__':
 
     ttk.Button(frame_recode, text='插入按键', command=insert_key_btn).grid(row=0, column=0)
     insert_key_var = tkinter.StringVar()
-    insert_key_label = ttk.Label(frame_recode, textvariable=insert_key_var)
-    insert_key_label.grid(row=0, column=1, sticky=tkinter.W)
+    insert_key_focus_var = tkinter.BooleanVar(value=False)
+    # insert_key_label = ttk.Label(frame_recode, textvariable=insert_key_var)
+    # insert_key_label.grid(row=0, column=1, sticky=tkinter.W)
+    insert_key_entry = tkinter.Entry(frame_recode, textvariable=insert_key_var,state='readonly')
+    insert_key_entry.grid(row=0, column=1, sticky=tkinter.W)
+    insert_key_entry.bind('<FocusIn>', lambda event: insert_key_focus_var.set(True))
+    insert_key_entry.bind('<FocusOut>', lambda event: insert_key_focus_var.set(False))
+
+
     ttk.Button(frame_recode, text='清空', command=clear_insert_list).grid(row=0, column=2)
 
     ttk.Button(frame_recode, text='插入时间', command=insert_time_btn).grid(row=1, column=0)
