@@ -31,15 +31,11 @@ _pause_flag = False
 ''' 在play循环时判断是否要挂起play子线程 '''
 _stop_flag = False
 ''' 在play循环时判断是否要终止play子线程 '''
-_is_recoding = False
-''' 判断是否在录制状态，只有Ture时才会写记录 '''
-_is_playing = False
-''' 判断是否在play，避免重复play '''
 _hot_key_tmp_list = []
 ''' 按下热键时将临时放在这里，当有press发生时会与设置的热键或热键组合一一比对 '''
 _output_info_list = []
 ''' 用于输出提示的按键记录 '''
-_global_interval = 0.01
+_global_interval = 0.05
 ''' 公共CD, 每一条记录执行后执行sleep的时长'''
 _crl = keyboard.Controller()
 ''' 按键控制器 '''
@@ -70,7 +66,7 @@ def open_file(path):
 
 def save_file(path):
     if path:
-        with open(path+'.json', 'w', encoding='utf-8') as file:
+        with open(path + '.json', 'w', encoding='utf-8') as file:
             res = {
                 'loop_count': loop_count,
                 'start_play_key': start_play_key,
@@ -94,14 +90,28 @@ def set_loop_count(count: int):
 
 
 def play(need_wait=False):
-    output_info_listener('开始播放动作')
+    global _play_thread, _stop_flag
+    if _play_thread and _play_thread.is_alive():
+        output_info_listener('正在播放动作')
+    else:
+        _play_thread = threading.Thread(target=__play_thread)
+        _play_thread.setDaemon(True)
+        _stop_flag = False
+        _play_thread.start()
+        output_info_listener('开始播放动作')
+        if need_wait:
+            _play_thread.join()
 
 
-def pause():
+def pause_resume():
+    global _pause_flag
+    _pause_flag = 1 - _pause_flag
     output_info_listener('播放动作已暂停')
 
 
 def stop():
+    global _stop_flag
+    _stop_flag = True
     output_info_listener('播放动作已终止')
 
 
@@ -118,6 +128,30 @@ def start_observer():
 
 
 # ---------------- <editor-fold desc="private methods"> ----------------
+def __play_thread():
+    time.sleep(2)
+    count = loop_count
+    while count:
+        count -= 1
+        for act in recode_list:
+            if _global_interval:
+                time.sleep(_global_interval)  # 公共CD
+            key = keyboard.KeyCode.from_vk(act['vk'])
+            if _stop_flag:
+                output_info_listener('stopped')
+                raise SystemError("手动强制结束！")
+            elif _pause_flag:
+                time.sleep(1)
+                output_info_listener('paused')
+            elif act['event'] == 'press':
+                _crl.press(key)
+                output_info_listener('press:%s' % act['name'])
+            elif act['event'] == 'release':
+                _crl.release(key)
+            elif act['event'] == 'wait':
+                time.sleep(act['vk'])
+
+
 def __format_key(key, action):
     """
     键对象格式化成字典

@@ -41,6 +41,7 @@ def insert_key_btn():
     [tv.insert('', 'end', values=(key["event"], key['vk'], key['name'])) for key in autokey.recode_list]
     clear_insert_list()
 
+
 def clear_insert_list():
     insert_key_list.clear()
     insert_key_var.set('')
@@ -71,7 +72,6 @@ if __name__ == '__main__':
     root.title('Auto Key')
     root.resizable(0, 0)  # 固定尺寸
     root.geometry('+5+80')
-    root.bind('<f>', lambda event:print(123))
 
     # ---------------- <editor-fold desc="菜单栏"> ----------------
     menuBar = tkinter.Menu(root)
@@ -113,11 +113,10 @@ if __name__ == '__main__':
     insert_key_focus_var = tkinter.BooleanVar(value=False)
     # insert_key_label = ttk.Label(frame_recode, textvariable=insert_key_var)
     # insert_key_label.grid(row=0, column=1, sticky=tkinter.W)
-    insert_key_entry = tkinter.Entry(frame_recode, textvariable=insert_key_var,state='readonly')
+    insert_key_entry = tkinter.Entry(frame_recode, textvariable=insert_key_var, state='readonly')
     insert_key_entry.grid(row=0, column=1, sticky=tkinter.W)
     insert_key_entry.bind('<FocusIn>', lambda event: insert_key_focus_var.set(True))
     insert_key_entry.bind('<FocusOut>', lambda event: insert_key_focus_var.set(False))
-
 
     ttk.Button(frame_recode, text='清空', command=clear_insert_list).grid(row=0, column=2)
 
@@ -132,7 +131,7 @@ if __name__ == '__main__':
     frame_ctrl_btns = tkinter.Frame(root)
     frame_ctrl_btns.pack(pady=10)
 
-    ttk.Button(frame_ctrl_btns, text='播放').grid(row=0, column=0)
+    ttk.Button(frame_ctrl_btns, text='播放', command=lambda: autokey.play()).grid(row=0, column=0)
     ttk.Button(frame_ctrl_btns, text='暂停').grid(row=0, column=1)
     ttk.Button(frame_ctrl_btns, text='终止').grid(row=0, column=2)
     # --- </editor-fold> ---
@@ -145,3 +144,9 @@ if __name__ == '__main__':
     autokey.start_observer()
 
     root.mainloop()
+
+# TODO:
+#       1、 hotkey test
+#       2、 mouse recode & play
+#       3、 script mode play
+#       4、 write readme
