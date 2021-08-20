@@ -1,3 +1,4 @@
+import os
 import sys
 import threading
 from pynput import keyboard, mouse
@@ -8,8 +9,6 @@ import json
 ''' 动作文件路径，用于打开或保存文件 '''
 loop_count = 1
 ''' 循环次数，负数为无限循环 '''
-recode_list = []
-''' 动作集合 '''
 start_play_key = [43]  # ,
 ''' 播放热键 '''
 pause_play_key = [47]  # .
@@ -17,14 +16,12 @@ pause_play_key = [47]  # .
 stop_play_key = [44]  # /
 ''' 终止热键 '''
 
-output_info_listener = lambda s: None
-action_listener = lambda key: None
-state_listener = lambda s: None
-
 # --- </editor-fold> ---
 
 
 # ---------------- <editor-fold desc="private var"> ----------------
+recode_list = []
+''' 动作集合 '''
 _play_thread = None
 '''播放线程'''
 _pause_flag = False
@@ -37,8 +34,14 @@ _output_info_list = []
 ''' 用于输出提示的按键记录 '''
 _global_interval = 0.05
 ''' 公共CD, 每一条记录执行后执行sleep的时长'''
+_countdown = 5
+''' play前的倒记时 '''
 _crl = keyboard.Controller()
 ''' 按键控制器 '''
+
+output_info_listener = lambda s: None
+action_listener = lambda key: None
+state_listener = lambda s: None
 
 
 # --- </editor-fold> ---
@@ -98,7 +101,6 @@ def play(need_wait=False):
         _play_thread.setDaemon(True)
         _stop_flag = False
         _play_thread.start()
-        output_info_listener('开始播放动作')
         if need_wait:
             _play_thread.join()
 
@@ -129,8 +131,16 @@ def start_observer():
 
 # ---------------- <editor-fold desc="private methods"> ----------------
 def __play_thread():
-    time.sleep(2)
+    # 开始前的倒记时
+    for t in range(_countdown):
+        time.sleep(1)
+        r = _countdown - t - 1
+        output_info_listener("play in:%d" % r)
+        os.system("say %s" % str(r))
+
     count = loop_count
+    output_info_listener('开始播放动作')
+
     while count:
         count -= 1
         for act in recode_list:
@@ -197,8 +207,8 @@ def __global_mouse_listener(key, action):
 
 # --------------<editor-fold desc="main: 以脚本方式运行">--------------
 if __name__ == '__main__':
-    open_file('actions.action')
-    loop_count = 10
+    open_file('example.json')
+    loop_count = 1
     output_info_listener = lambda s: print(s)
     state_listener = lambda s: sys.exit(0) if s == 'stopped' else print(s)
     play(need_wait=True)

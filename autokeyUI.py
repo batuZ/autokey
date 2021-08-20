@@ -144,9 +144,3 @@ if __name__ == '__main__':
     autokey.start_observer()
 
     root.mainloop()
-
-# TODO:
-#       1、 hotkey test
-#       2、 mouse recode & play
-#       3、 script mode play
-#       4、 write readme
