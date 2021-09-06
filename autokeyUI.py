@@ -71,7 +71,7 @@ if __name__ == '__main__':
     root = tkinter.Tk()
     root.title('Auto Key')
     root.resizable(0, 0)  # 固定尺寸
-    root.geometry('+5+80')
+    root.geometry('360x400+5+80')
 
     # ---------------- <editor-fold desc="菜单栏"> ----------------
     menuBar = tkinter.Menu(root)
@@ -132,8 +132,8 @@ if __name__ == '__main__':
     frame_ctrl_btns.pack(pady=10)
 
     ttk.Button(frame_ctrl_btns, text='播放', command=lambda: autokey.play()).grid(row=0, column=0)
-    ttk.Button(frame_ctrl_btns, text='暂停').grid(row=0, column=1)
-    ttk.Button(frame_ctrl_btns, text='终止').grid(row=0, column=2)
+    ttk.Button(frame_ctrl_btns, text='暂停', command=lambda: autokey.pause_resume()).grid(row=0, column=1)
+    ttk.Button(frame_ctrl_btns, text='终止', command=lambda: autokey.stop()).grid(row=0, column=2)
     # --- </editor-fold> ---
 
     # 信息栏

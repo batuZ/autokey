@@ -1,0 +1,29 @@
+{
+  "loop_count": -1,
+  "start_play_key": [
+    43
+  ],
+  "pause_play_key": [
+    47
+  ],
+  "stop_play_key": [
+    44
+  ],
+  "actions": [
+    {
+      "event": "press",
+      "name": "'4'",
+      "vk": 21
+    },
+    {
+      "event": "release",
+      "name": "'4'",
+      "vk": 21
+    },
+    {
+      "event": "wait",
+      "vk": 2,
+      "name": "second"
+    }
+  ]
+}

@@ -93,13 +93,14 @@ def set_loop_count(count: int):
 
 
 def play(need_wait=False):
-    global _play_thread, _stop_flag
+    global _play_thread, _stop_flag, _pause_flag
+    _stop_flag = False
+    _pause_flag = False
     if _play_thread and _play_thread.is_alive():
         output_info_listener('正在播放动作')
     else:
         _play_thread = threading.Thread(target=__play_thread)
         _play_thread.setDaemon(True)
-        _stop_flag = False
         _play_thread.start()
         if need_wait:
             _play_thread.join()
@@ -136,7 +137,7 @@ def __play_thread():
         time.sleep(1)
         r = _countdown - t - 1
         output_info_listener("play in:%d" % r)
-        os.system("say %s" % str(r))
+        # os.system("say %s" % str(r))
 
     count = loop_count
     output_info_listener('开始播放动作')
@@ -195,8 +196,37 @@ def __global_keyboard_listener(key):
         output_info_listener(tt[1::])
     else:
         _output_info_list.clear()
+
     # 调用callbacks
     action_listener(key)
+
+    # 处理hotkey
+    __hot_key(key, key['event'])
+
+def __hot_key(key, action):
+    """
+    热键控制
+    :param key: 键字典
+    :param action: 动作
+    :return: None
+    """
+    if action == 'press':
+        # 有按键按下时，把vk塞进hot_key_tmp_list
+        _hot_key_tmp_list.append(key['vk'])
+    elif action == 'release':
+        # 有按键抬起时，判断hot_key_tmp_list里的值和哪个hotkey匹配
+        if _hot_key_tmp_list == start_play_key:
+            play()
+        elif _hot_key_tmp_list == pause_play_key:
+            pause_resume()
+        elif _hot_key_tmp_list == stop_play_key:
+            stop()
+        else:
+            pass
+        # 清空hot_key_tmp_list
+        _hot_key_tmp_list.clear()
+    else:
+        pass
 
 
 def __global_mouse_listener(key, action):
@@ -207,7 +237,7 @@ def __global_mouse_listener(key, action):
 
 # --------------<editor-fold desc="main: 以脚本方式运行">--------------
 if __name__ == '__main__':
-    open_file('example.json')
+    open_file('d3.json')
     loop_count = 1
     output_info_listener = lambda s: print(s)
     state_listener = lambda s: sys.exit(0) if s == 'stopped' else print(s)
